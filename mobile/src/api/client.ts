@@ -1,12 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Testing on a physical phone over Expo Go: it must reach the backend via
-// the dev machine's LAN IP (not "localhost" — that would mean the phone
-// itself). Both must be on the same WiFi network. Update this if your
-// machine's IP changes (check with `ipconfig`), or switch back to
-// "10.0.2.2" if you move to an Android emulator instead.
-const DEV_HOST = "192.168.1.50";
+// Testing on a physical phone over USB: `adb reverse tcp:4000 tcp:4000` maps
+// the phone's localhost:4000 to the dev machine's backend, so no WiFi LAN IP
+// is needed. If you switch to a WiFi/Expo-Go-over-network setup instead,
+// change this back to the dev machine's LAN IP (check with `ipconfig`), or
+// "10.0.2.2" if you move to an Android emulator.
+const DEV_HOST = "localhost";
 
 export const API_BASE_URL = `http://${DEV_HOST}:4000`;
 

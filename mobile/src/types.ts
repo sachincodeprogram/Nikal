@@ -1,65 +1,75 @@
 export type VehicleType = "CAR" | "BIKE";
 
 export interface User {
-  id: string;
+  _id: string;
   phone: string;
-  phoneVerified: boolean;
   name: string;
-  email?: string | null;
-  photoUrl?: string | null;
+  photo?: string | null;
   bio?: string | null;
-  ratingAvg: number;
+  gender?: "male" | "female" | "other";
+  isVerified: boolean;
+  avgRating: number;
   ratingCount: number;
+  role: "passenger" | "driver";
 }
 
 export interface Vehicle {
-  id: string;
-  ownerId: string;
+  _id: string;
+  userId: string;
   type: VehicleType;
   make: string;
   model: string;
-  color: string;
-  plateNumber: string;
-  seatCount: number;
-  photoUrl?: string | null;
+  color?: string;
+  plateNo: string;
+  seats: number;
+  photo?: string | null;
   verified: boolean;
 }
 
-export type RideStatus = "ACTIVE" | "COMPLETED" | "CANCELLED";
-
-export interface Ride {
-  id: string;
-  driverId: string;
-  driver?: User;
-  vehicleId: string;
-  vehicle?: Vehicle;
-  vehicleType: VehicleType;
-  fromLabel: string;
-  fromLat: number;
-  fromLng: number;
-  toLabel: string;
-  toLat: number;
-  toLng: number;
-  departureAt: string;
-  totalSeats: number;
-  availableSeats: number;
-  pricePerSeat: string;
-  autoApprove: boolean;
-  status: RideStatus;
+// Mongo GeoJSON point: coordinates are [lng, lat], not [lat, lng].
+export interface GeoPlace {
+  name: string;
+  loc: { type: "Point"; coordinates: [number, number] };
 }
 
-export type BookingStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "REJECTED"
-  | "CANCELLED"
-  | "COMPLETED";
+export type RideStatus = "active" | "full" | "started" | "completed" | "cancelled";
+export type ApprovalMode = "auto" | "manual";
+
+export interface Ride {
+  _id: string;
+  driverId: string | User;
+  vehicleId: string | Vehicle;
+  from: GeoPlace;
+  to: GeoPlace;
+  departureAt: string;
+  seatsTotal: number;
+  seatsLeft: number;
+  pricePerSeat: number;
+  approval: ApprovalMode;
+  status: RideStatus;
+  // present only on /rides/search results
+  passengerFare?: number;
+  segmentKm?: number;
+  totalKm?: number;
+  bookings?: Booking[]; // present only on /rides/mine
+}
+
+export type BookingStatus = "pending" | "confirmed" | "rejected" | "cancelled" | "completed";
 
 export interface Booking {
-  id: string;
-  rideId: string;
-  ride?: Ride;
-  passengerId: string;
-  seatsBooked: number;
+  _id: string;
+  rideId: string | Ride;
+  passengerId: string | User;
+  driverId: string | User;
+  seats: number;
+  amount: number;
   status: BookingStatus;
+}
+
+export function placeLat(place: GeoPlace): number {
+  return place.loc.coordinates[1];
+}
+
+export function placeLng(place: GeoPlace): number {
+  return place.loc.coordinates[0];
 }

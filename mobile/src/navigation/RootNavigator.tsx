@@ -1,6 +1,8 @@
+import { useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
+import { ChevronLeftIcon } from "../components/icons";
 import { useAuth } from "../context/AuthContext";
 import DriverRidesScreen from "../screens/DriverRidesScreen";
 import HomeScreen from "../screens/HomeScreen";
@@ -12,6 +14,7 @@ import RateTripScreen from "../screens/RateTripScreen";
 import RideDetailScreen from "../screens/RideDetailScreen";
 import RideResultsScreen from "../screens/RideResultsScreen";
 import SearchScreen from "../screens/SearchScreen";
+import { colors, fonts } from "../theme";
 import { Ride } from "../types";
 
 export type RootStackParamList = {
@@ -29,28 +32,58 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function BackButton() {
+  const navigation = useNavigation();
+  return (
+    <TouchableOpacity
+      onPress={() => navigation.goBack()}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 11,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <ChevronLeftIcon size={19} color={colors.ink900} />
+    </TouchableOpacity>
+  );
+}
+
 export default function RootNavigator() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg }}>
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: colors.bg },
+        headerTitleStyle: { fontFamily: fonts.extrabold, fontSize: 19, color: colors.ink900 },
+        headerTitleAlign: "left",
+        headerLeft: ({ canGoBack }) => (canGoBack ? <BackButton /> : null),
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       {!user ? (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       ) : (
         <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ title: "Ride Search" }} />
+          <Stack.Screen name="Search" component={SearchScreen} options={{ title: "Find a Ride" }} />
           <Stack.Screen name="RideResults" component={RideResultsScreen} options={{ title: "Available Rides" }} />
           <Stack.Screen name="RideDetail" component={RideDetailScreen} options={{ title: "Ride Details" }} />
-          <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: "Publish Ride" }} />
+          <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: "Publish a Ride" }} />
           <Stack.Screen name="MyBookings" component={MyBookingsScreen} options={{ title: "My Bookings" }} />
           <Stack.Screen name="DriverRides" component={DriverRidesScreen} options={{ title: "My Published Rides" }} />
           <Stack.Screen name="RateTrip" component={RateTripScreen} options={{ title: "Rate Trip" }} />

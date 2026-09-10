@@ -10,7 +10,9 @@ import {
   View,
 } from "react-native";
 import { api } from "../api/client";
+import { StarIcon } from "../components/icons";
 import { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, fonts, radii, shadow, spacing } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RateTrip">;
 
@@ -23,12 +25,10 @@ export default function RateTripScreen({ route, navigation }: Props) {
   async function submit() {
     setSubmitting(true);
     try {
-      await api.post("/ratings", { bookingId, score, comment: comment || undefined });
-      Alert.alert("Dhanyavaad!", "Rating submit ho gayi.", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      await api.post("/ratings", { bookingId, stars: score, comment: comment || undefined });
+      Alert.alert("Dhanyavaad!", "Rating submit ho gayi.", [{ text: "OK", onPress: () => navigation.goBack() }]);
     } catch (err: any) {
-      Alert.alert("Failed", err?.response?.data?.error ?? err.message);
+      Alert.alert("Failed", err?.response?.data?.message ?? err.message);
     } finally {
       setSubmitting(false);
     }
@@ -36,54 +36,62 @@ export default function RateTripScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{rateeName ?? "Trip"} ko rate karein</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>{rateeName ?? "Trip"} ko rate karein</Text>
 
-      <View style={styles.stars}>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <TouchableOpacity key={n} onPress={() => setScore(n)}>
-            <Text style={styles.star}>{n <= score ? "⭐" : "☆"}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.stars}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <TouchableOpacity key={n} onPress={() => setScore(n)} hitSlop={8}>
+              <StarIcon size={34} color={n <= score ? colors.amber : colors.ink200} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Comment (optional)"
+          placeholderTextColor={colors.ink300}
+          value={comment}
+          onChangeText={setComment}
+          multiline
+        />
+
+        <TouchableOpacity style={styles.button} onPress={submit} disabled={submitting}>
+          {submitting ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Submit Rating</Text>}
+        </TouchableOpacity>
       </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Comment (optional)"
-        value={comment}
-        onChangeText={setComment}
-        multiline
-      />
-
-      <TouchableOpacity style={styles.button} onPress={submit} disabled={submitting}>
-        {submitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Submit Rating</Text>
-        )}
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, paddingTop: 60 },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 20, textAlign: "center" },
-  stars: { flexDirection: "row", justifyContent: "center", marginBottom: 20, gap: 6 },
-  star: { fontSize: 36 },
+  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.xl, justifyContent: "center" },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xxl,
+    padding: spacing.xxl,
+    ...shadow.card,
+  },
+  title: { fontFamily: fonts.extrabold, fontSize: 19, color: colors.ink900, marginBottom: spacing.xl, textAlign: "center" },
+  stars: { flexDirection: "row", justifyContent: "center", marginBottom: spacing.xl, gap: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 80,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    minHeight: 84,
     textAlignVertical: "top",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: colors.ink900,
   },
   button: {
-    backgroundColor: "#00857a",
-    borderRadius: 8,
-    padding: 14,
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
+    paddingVertical: 15,
     alignItems: "center",
+    ...shadow.button,
   },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  buttonText: { color: colors.white, fontFamily: fonts.bold, fontSize: 15 },
 });

@@ -28,8 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = await loadStoredToken();
       if (token) {
         try {
-          const { data } = await api.get("/auth/me");
-          setUser(data.user);
+          const { data } = await api.get("/users/me");
+          setUser(data);
         } catch {
           await setAuthToken(null);
         }
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function loginWithFirebaseToken(idToken: string, name?: string) {
-    const { data } = await api.post("/auth/verify", { idToken, name });
+    const { data } = await api.post("/auth/firebase", { idToken, name });
     await setAuthToken(data.token);
     setUser(data.user);
   }
@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function refreshMe() {
-    const { data } = await api.get("/auth/me");
-    setUser(data.user);
+    const { data } = await api.get("/users/me");
+    setUser(data);
   }
 
   return (

@@ -5,6 +5,7 @@ const { Schema } = mongoose;
 const vehicleSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    type: { type: String, enum: ["CAR", "BIKE"], required: true },
     make: { type: String, required: true },
     model: { type: String, required: true },
     color: { type: String },

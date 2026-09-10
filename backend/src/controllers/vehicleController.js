@@ -2,9 +2,10 @@ import Vehicle from "../models/Vehicle.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const createVehicle = asyncHandler(async (req, res) => {
-  const { make, model, color, plateNo, seats, photo } = req.body;
+  const { type, make, model, color, plateNo, seats, photo } = req.body;
   const vehicle = await Vehicle.create({
     userId: req.user._id,
+    type,
     make,
     model,
     color,

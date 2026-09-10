@@ -10,6 +10,7 @@ const userSchema = new Schema(
     bio: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     isVerified: { type: Boolean, default: false },
+    banned: { type: Boolean, default: false },
     avgRating: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
     fcmToken: { type: String },

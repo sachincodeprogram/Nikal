@@ -9,6 +9,12 @@ import { connectDB } from "./src/config/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import vehicleRoutes from "./src/routes/vehicleRoutes.js";
+import rideRoutes from "./src/routes/rideRoutes.js";
+import bookingRoutes from "./src/routes/bookingRoutes.js";
+import ratingRoutes from "./src/routes/ratingRoutes.js";
+import messageRoutes from "./src/routes/messageRoutes.js";
+import reportRoutes from "./src/routes/reportRoutes.js";
+import adminRoutes from "./src/routes/adminRoutes.js";
 import { notFound, errorHandler } from "./src/middleware/errorHandler.js";
 import { initSockets } from "./src/sockets/index.js";
 
@@ -30,6 +36,12 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/vehicles", vehicleRoutes);
+app.use("/rides", rideRoutes);
+app.use("/bookings", bookingRoutes);
+app.use("/ratings", ratingRoutes);
+app.use("/messages", messageRoutes);
+app.use("/reports", reportRoutes);
+app.use("/admin", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

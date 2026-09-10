@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Socket } from "socket.io-client";
 import { api } from "../api/client";
 import { connectSocket } from "../api/socket";
@@ -29,6 +30,7 @@ export default function ChatScreen({ route }: Props) {
   const [loading, setLoading] = useState(true);
   const socketRef = useRef<Socket | null>(null);
   const listRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     let active = true;
@@ -73,15 +75,15 @@ export default function ChatScreen({ route }: Props) {
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={insets.top}
     >
       <FlatList
         ref={listRef}
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, messages.length === 0 && styles.listContentEmpty]}
         data={messages}
         keyExtractor={(m) => m._id}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           !loading ? <Text style={styles.emptyText}>Abhi koi message nahi hai — "Namaste" bolke shuru karein!</Text> : null
         }
@@ -97,14 +99,13 @@ export default function ChatScreen({ route }: Props) {
         }}
       />
 
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <TextInput
           style={styles.input}
           placeholder="Message likhein..."
           placeholderTextColor={colors.ink300}
           value={text}
           onChangeText={setText}
-          multiline
         />
         <TouchableOpacity style={styles.sendButton} onPress={send} disabled={!text.trim()}>
           <SendIcon size={17} color={colors.white} />
@@ -117,11 +118,10 @@ export default function ChatScreen({ route }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   list: { flex: 1 },
-  listContent: { padding: spacing.lg, gap: spacing.sm, flexGrow: 1 },
+  listContent: { padding: spacing.lg, gap: spacing.sm },
+  listContentEmpty: { flexGrow: 1, justifyContent: "center" },
   emptyText: {
-    flex: 1,
     textAlign: "center",
-    textAlignVertical: "center",
     fontFamily: fonts.semibold,
     color: colors.ink500,
     fontSize: 13,

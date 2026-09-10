@@ -10,7 +10,8 @@ import {
   View,
 } from "react-native";
 import { api } from "../api/client";
-import { CheckIcon, ClockIcon, XIcon } from "../components/icons";
+import { ChatIcon, CheckIcon, ClockIcon, DotsIcon, XIcon } from "../components/icons";
+import UserActionsSheet from "../components/UserActionsSheet";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 import { Booking, Ride, User } from "../types";
@@ -29,6 +30,7 @@ const STATUS_PILL: Record<string, { label: string; bg: string; fg: string }> = {
 
 export default function DriverRidesScreen({ navigation }: Props) {
   const [rides, setRides] = useState<RideWithBookings[]>([]);
+  const [actionsFor, setActionsFor] = useState<Booking | null>(null);
 
   const load = useCallback(() => {
     api.get("/rides/mine").then(({ data }) => setRides(data));
@@ -68,75 +70,117 @@ export default function DriverRidesScreen({ navigation }: Props) {
   }
 
   return (
-    <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContent}
-      data={rides}
-      keyExtractor={(r) => r._id}
-      renderItem={({ item }) => {
-        const pending = (item.bookings ?? []).filter((b) => b.status === "pending");
-        const pill = STATUS_PILL[item.status] ?? STATUS_PILL.active;
-        return (
-          <View style={styles.card}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.route} numberOfLines={1}>
-                {item.from.name} → {item.to.name}
-              </Text>
-              <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                <Text style={[styles.pillText, { color: pill.fg }]}>{pill.label}</Text>
+    <>
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        data={rides}
+        keyExtractor={(r) => r._id}
+        renderItem={({ item }) => {
+          const pending = (item.bookings ?? []).filter((b) => b.status === "pending");
+          const confirmed = (item.bookings ?? []).filter((b) => b.status === "confirmed");
+          const pill = STATUS_PILL[item.status] ?? STATUS_PILL.active;
+          return (
+            <View style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.route} numberOfLines={1}>
+                  {item.from.name} → {item.to.name}
+                </Text>
+                <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                  <Text style={[styles.pillText, { color: pill.fg }]}>{pill.label}</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.metaRow}>
-              <ClockIcon size={13} color={colors.ink400} />
-              <Text style={styles.metaText}>
-                {new Date(item.departureAt).toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
-                {"  ·  "}
-                {item.seatsLeft} seats khaali
-              </Text>
-            </View>
+              <View style={styles.metaRow}>
+                <ClockIcon size={13} color={colors.ink400} />
+                <Text style={styles.metaText}>
+                  {new Date(item.departureAt).toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                  {"  ·  "}
+                  {item.seatsLeft} seats khaali
+                </Text>
+              </View>
 
-            {pending.length > 0 && (
-              <>
-                <View style={styles.hr} />
-                <Text style={styles.sectionLabel}>Booking Requests</Text>
-                {pending.map((b) => {
-                  const passenger = b.passengerId as User | undefined;
-                  return (
-                    <View key={b._id} style={styles.requestRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.requestName} numberOfLines={1}>
-                          {passenger?.name ?? "Passenger"} · {b.seats} seat(s)
-                        </Text>
-                        <Text style={styles.requestAmount}>₹{b.amount}</Text>
+              {pending.length > 0 && (
+                <>
+                  <View style={styles.hr} />
+                  <Text style={styles.sectionLabel}>Booking Requests</Text>
+                  {pending.map((b) => {
+                    const passenger = b.passengerId as User | undefined;
+                    return (
+                      <View key={b._id} style={styles.requestRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.requestName} numberOfLines={1}>
+                            {passenger?.name ?? "Passenger"} · {b.seats} seat(s)
+                          </Text>
+                          <Text style={styles.requestAmount}>₹{b.amount}</Text>
+                        </View>
+                        <View style={styles.requestActions}>
+                          <TouchableOpacity style={styles.approveBtn} onPress={() => decide(b._id, "confirmed")}>
+                            <CheckIcon size={12} color={colors.white} />
+                            <Text style={styles.approveText}>Approve</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.rejectBtn} onPress={() => decide(b._id, "rejected")}>
+                            <XIcon size={12} color={colors.ink700} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                      <View style={styles.requestActions}>
-                        <TouchableOpacity style={styles.approveBtn} onPress={() => decide(b._id, "confirmed")}>
-                          <CheckIcon size={12} color={colors.white} />
-                          <Text style={styles.approveText}>Approve</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.rejectBtn} onPress={() => decide(b._id, "rejected")}>
-                          <XIcon size={12} color={colors.ink700} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  );
-                })}
-              </>
-            )}
+                    );
+                  })}
+                </>
+              )}
 
-            {item.status === "active" && (
-              <>
-                <View style={styles.hr} />
-                <TouchableOpacity style={styles.cancelRow} onPress={() => cancelRide(item._id)}>
-                  <XIcon size={13} color={colors.danger} />
-                  <Text style={styles.cancelText}>Cancel Ride</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        );
-      }}
-    />
+              {confirmed.length > 0 && (
+                <>
+                  <View style={styles.hr} />
+                  <Text style={styles.sectionLabel}>Confirmed Passengers</Text>
+                  {confirmed.map((b) => {
+                    const passenger = b.passengerId as User | undefined;
+                    return (
+                      <View key={b._id} style={styles.requestRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.requestName} numberOfLines={1}>
+                            {passenger?.name ?? "Passenger"} · {b.seats} seat(s)
+                          </Text>
+                          <Text style={styles.requestAmount}>₹{b.amount}</Text>
+                        </View>
+                        <View style={styles.requestActions}>
+                          <TouchableOpacity
+                            style={styles.iconBtn}
+                            onPress={() => navigation.navigate("Chat", { bookingId: b._id, otherUserName: passenger?.name })}
+                          >
+                            <ChatIcon size={16} color={colors.blue} />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.iconBtn} onPress={() => setActionsFor(b)} hitSlop={6}>
+                            <DotsIcon size={16} color={colors.ink400} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </>
+              )}
+
+              {item.status === "active" && (
+                <>
+                  <View style={styles.hr} />
+                  <TouchableOpacity style={styles.cancelRow} onPress={() => cancelRide(item._id)}>
+                    <XIcon size={13} color={colors.danger} />
+                    <Text style={styles.cancelText}>Cancel Ride</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          );
+        }}
+      />
+
+      <UserActionsSheet
+        visible={!!actionsFor}
+        onClose={() => setActionsFor(null)}
+        targetUserId={((actionsFor?.passengerId as User)?._id ?? (actionsFor?.passengerId as string)) || ""}
+        targetName={(actionsFor?.passengerId as User)?.name}
+        bookingId={actionsFor?._id}
+      />
+    </>
   );
 }
 
@@ -172,7 +216,8 @@ const styles = StyleSheet.create({
   requestRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
   requestName: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink900 },
   requestAmount: { fontFamily: fonts.semibold, fontSize: 11.5, color: colors.ink500, marginTop: 1 },
-  requestActions: { flexDirection: "row", gap: 6 },
+  requestActions: { flexDirection: "row", gap: spacing.md, alignItems: "center" },
+  iconBtn: { padding: 2 },
   approveBtn: {
     flexDirection: "row",
     alignItems: "center",

@@ -8,9 +8,12 @@ export interface User {
   bio?: string | null;
   gender?: "male" | "female" | "other";
   isVerified: boolean;
+  banned?: boolean;
+  isAdmin?: boolean;
   avgRating: number;
   ratingCount: number;
   role: "passenger" | "driver";
+  blocked?: string[];
 }
 
 export interface Vehicle {
@@ -64,6 +67,44 @@ export interface Booking {
   seats: number;
   amount: number;
   status: BookingStatus;
+}
+
+export interface Message {
+  _id: string;
+  bookingId: string;
+  from: string;
+  to: string;
+  text: string;
+  createdAt: string;
+}
+
+export type ReportStatus = "open" | "reviewing" | "resolved" | "dismissed";
+
+export interface Report {
+  _id: string;
+  reporterId: string | User;
+  reportedId: string | User;
+  bookingId?: string;
+  reason: string;
+  status: ReportStatus;
+  createdAt: string;
+}
+
+export interface Payout {
+  _id: string;
+  driverId: string | User;
+  amount: number;
+  period: string;
+  status: "pending" | "paid";
+  upiId: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 }
 
 export function placeLat(place: GeoPlace): number {

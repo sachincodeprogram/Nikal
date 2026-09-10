@@ -4,6 +4,13 @@ import React from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import { ChevronLeftIcon } from "../components/icons";
 import { useAuth } from "../context/AuthContext";
+import AdminBookingsScreen from "../screens/AdminBookingsScreen";
+import AdminDashboardScreen from "../screens/AdminDashboardScreen";
+import AdminPayoutsScreen from "../screens/AdminPayoutsScreen";
+import AdminReportsScreen from "../screens/AdminReportsScreen";
+import AdminRidesScreen from "../screens/AdminRidesScreen";
+import AdminUsersScreen from "../screens/AdminUsersScreen";
+import ChatScreen from "../screens/ChatScreen";
 import DriverRidesScreen from "../screens/DriverRidesScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -28,6 +35,13 @@ export type RootStackParamList = {
   DriverRides: undefined;
   RateTrip: { bookingId: string; rateeName?: string };
   Profile: undefined;
+  Chat: { bookingId: string; otherUserName?: string };
+  AdminDashboard: undefined;
+  AdminUsers: undefined;
+  AdminRides: undefined;
+  AdminBookings: undefined;
+  AdminReports: undefined;
+  AdminPayouts: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -88,6 +102,17 @@ export default function RootNavigator() {
           <Stack.Screen name="DriverRides" component={DriverRidesScreen} options={{ title: "My Published Rides" }} />
           <Stack.Screen name="RateTrip" component={RateTripScreen} options={{ title: "Rate Trip" }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Profile" }} />
+          <Stack.Screen
+            name="Chat"
+            component={ChatScreen}
+            options={({ route }) => ({ title: route.params.otherUserName ?? "Chat" })}
+          />
+          <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: "Admin" }} />
+          <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: "Users" }} />
+          <Stack.Screen name="AdminRides" component={AdminRidesScreen} options={{ title: "Rides" }} />
+          <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: "Bookings" }} />
+          <Stack.Screen name="AdminReports" component={AdminReportsScreen} options={{ title: "Reports" }} />
+          <Stack.Screen name="AdminPayouts" component={AdminPayoutsScreen} options={{ title: "Payouts" }} />
         </>
       )}
     </Stack.Navigator>

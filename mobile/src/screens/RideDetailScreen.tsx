@@ -10,7 +10,8 @@ import {
   View,
 } from "react-native";
 import { api } from "../api/client";
-import { BikeIcon, CalendarIcon, CarIcon, PinIcon, SeatIcon, ShieldCheckIcon, StarIcon } from "../components/icons";
+import { BikeIcon, CalendarIcon, CarIcon, DotsIcon, PinIcon, SeatIcon, ShieldCheckIcon, StarIcon } from "../components/icons";
+import UserActionsSheet from "../components/UserActionsSheet";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 import { placeLat, placeLng, Ride, User, Vehicle } from "../types";
@@ -21,6 +22,7 @@ export default function RideDetailScreen({ route }: Props) {
   const { rideId } = route.params;
   const [ride, setRide] = useState<Ride | null>(null);
   const [booking, setBooking] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     api.get(`/rides/${rideId}`).then(({ data }) => setRide(data));
@@ -93,7 +95,12 @@ export default function RideDetailScreen({ route }: Props) {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Driver</Text>
+          <View style={styles.driverHeaderRow}>
+            <Text style={[styles.label, { marginBottom: 0 }]}>Driver</Text>
+            <TouchableOpacity onPress={() => setShowActions(true)} hitSlop={8}>
+              <DotsIcon size={16} color={colors.ink400} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.driverRow}>
             <View style={styles.driverAvatar}>
               <Text style={styles.driverAvatarText}>{(driver?.name ?? "?").charAt(0).toUpperCase()}</Text>
@@ -112,6 +119,13 @@ export default function RideDetailScreen({ route }: Props) {
             </View>
           </View>
         </View>
+
+        <UserActionsSheet
+          visible={showActions}
+          onClose={() => setShowActions(false)}
+          targetUserId={driver?._id}
+          targetName={driver?.name}
+        />
 
         <View style={styles.card}>
           <Text style={styles.label}>Vehicle</Text>
@@ -196,6 +210,12 @@ const styles = StyleSheet.create({
     color: colors.ink500,
     textTransform: "uppercase",
     letterSpacing: 0.4,
+    marginBottom: spacing.md,
+  },
+  driverHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
   },
   driverRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },

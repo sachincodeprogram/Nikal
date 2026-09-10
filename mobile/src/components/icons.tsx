@@ -288,3 +288,84 @@ export function RouteMarkIcon({ size = 26, color = "#FFFFFF" }: IconProps) {
     </Svg>
   );
 }
+
+export function ChatIcon({ size = 18, color = "#3856C9" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M4 5.5h16a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z"
+        fill={color}
+        fillOpacity={0.16}
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Line x1={7.5} y1={10} x2={16.5} y2={10} stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={7.5} y1={13.2} x2={13.5} y2={13.2} stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function SendIcon({ size = 18, color = "#FFFFFF" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M3.5 11.2 20 4l-5.3 16.3-3.7-7.1-7.5-2z"
+        fill={color}
+        fillOpacity={0.85}
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function BlockIcon({ size = 15, color = "#E5484D" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={9} fill="none" stroke={color} strokeWidth={1.9} />
+      <Line x1={6} y1={18} x2={18} y2={6} stroke={color} strokeWidth={1.9} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function ReportIcon({ size = 15, color = "#E5484D" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 3 21.5 20H2.5z"
+        fill={color}
+        fillOpacity={0.14}
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinejoin="round"
+      />
+      <Line x1={12} y1={9.5} x2={12} y2={14} stroke={color} strokeWidth={1.9} strokeLinecap="round" />
+      <Circle cx={12} cy={16.8} r={1} fill={color} stroke="none" />
+    </Svg>
+  );
+}
+
+export function DashboardIcon({ size = 19, color = "#3E4C49" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Rect x={3.5} y={3.5} width={7.5} height={7.5} rx={2} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={1.6} />
+      <Rect x={13} y={3.5} width={7.5} height={4.5} rx={2} fill={color} fillOpacity={0.3} stroke={color} strokeWidth={1.6} />
+      <Rect x={13} y={10} width={7.5} height={10.5} rx={2} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={1.6} />
+      <Rect x={3.5} y={13} width={7.5} height={7.5} rx={2} fill={color} fillOpacity={0.3} stroke={color} strokeWidth={1.6} />
+    </Svg>
+  );
+}
+
+export function DotsIcon({ size = 18, color = "#6C7A78" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={5} cy={12} r={1.7} fill={color} />
+      <Circle cx={12} cy={12} r={1.7} fill={color} />
+      <Circle cx={19} cy={12} r={1.7} fill={color} />
+    </Svg>
+  );
+}

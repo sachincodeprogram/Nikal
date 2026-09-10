@@ -4,6 +4,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
   CarIcon,
+  DashboardIcon,
   LogOutIcon,
   MegaphoneIcon,
   SearchIcon,
@@ -93,6 +94,18 @@ export default function HomeScreen({ navigation }: Props) {
         ))}
       </View>
 
+      {user?.isAdmin && (
+        <TouchableOpacity style={styles.adminCard} onPress={() => navigation.navigate("AdminDashboard")}>
+          <View style={[styles.cardIcon, { backgroundColor: colors.ink100 }]}>
+            <DashboardIcon size={19} color={colors.ink700} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Admin Panel</Text>
+            <Text style={styles.cardSub}>Users, rides, reports, payouts</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logout} onPress={logout}>
         <LogOutIcon size={15} color={colors.danger} />
         <Text style={styles.logoutText}>Logout</Text>
@@ -166,6 +179,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  adminCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.md,
+  },
   cardTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink900, lineHeight: 18 },
   cardSub: { fontFamily: fonts.semibold, fontSize: 11.5, color: colors.ink500 },
   logout: {

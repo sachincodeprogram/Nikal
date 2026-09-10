@@ -1,14 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Testing on a physical phone over USB: `adb reverse tcp:4000 tcp:4000` maps
-// the phone's localhost:4000 to the dev machine's backend, so no WiFi LAN IP
-// is needed. If you switch to a WiFi/Expo-Go-over-network setup instead,
-// change this back to the dev machine's LAN IP (check with `ipconfig`), or
-// "10.0.2.2" if you move to an Android emulator.
-const DEV_HOST = "localhost";
-
-export const API_BASE_URL = `http://${DEV_HOST}:4000`;
+export const API_BASE_URL = "https://nikal-lapx.onrender.com";
 
 export const api = axios.create({ baseURL: API_BASE_URL });
 

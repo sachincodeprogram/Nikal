@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api/client";
 import { BikeIcon, CalendarIcon, CarIcon, MegaphoneIcon, PinIcon } from "../components/icons";
 import { RootStackParamList } from "../navigation/RootNavigator";
@@ -19,6 +20,7 @@ import { Vehicle } from "../types";
 type Props = NativeStackScreenProps<RootStackParamList, "PublishRide">;
 
 export default function PublishRideScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleId, setVehicleId] = useState<string | undefined>();
   const [fromLabel, setFromLabel] = useState("");
@@ -65,7 +67,10 @@ export default function PublishRideScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xxl) + spacing.xxxl }]}
+    >
       <Text style={styles.label}>Vehicle</Text>
       {vehicles.length === 0 && (
         <Text style={styles.warn}>Aapke paas koi vehicle nahi hai. Pehle Profile screen se Car/Bike add karo.</Text>

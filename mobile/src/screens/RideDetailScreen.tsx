@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api/client";
 import { BikeIcon, CalendarIcon, CarIcon, DotsIcon, PinIcon, SeatIcon, ShieldCheckIcon, StarIcon } from "../components/icons";
 import UserActionsSheet from "../components/UserActionsSheet";
@@ -20,6 +21,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "RideDetail">;
 
 export default function RideDetailScreen({ route }: Props) {
   const { rideId } = route.params;
+  const insets = useSafeAreaInsets();
   const [ride, setRide] = useState<Ride | null>(null);
   const [booking, setBooking] = useState(false);
   const [showActions, setShowActions] = useState(false);
@@ -160,7 +162,7 @@ export default function RideDetailScreen({ route }: Props) {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}>
         <TouchableOpacity style={styles.button} onPress={book} disabled={booking}>
           {booking ? (
             <ActivityIndicator color={colors.white} />

@@ -1,6 +1,5 @@
-import * as Google from "expo-auth-session/providers/google";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
-import * as WebBrowser from "expo-web-browser";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -8,7 +7,7 @@ import {
   signInWithCredential,
   signInWithPhoneNumber,
 } from "firebase/auth";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +23,12 @@ import { useAuth } from "../context/AuthContext";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 
 const auth = getAuth(firebaseApp);
-WebBrowser.maybeCompleteAuthSession();
+
+// webClientId here (not the Android client) is required by the native SDK
+// too — it's what identifies this app to Firebase so the resulting idToken
+// verifies correctly server-side. The Android client is only used behind
+// the scenes to authorize the on-device Google Sign-In sheet.
+GoogleSignin.configure({ webClientId: googleWebClientId });
 
 export default function LoginScreen() {
   const { loginWithFirebaseToken } = useAuth();
@@ -38,27 +42,26 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const [, googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
-    webClientId: googleWebClientId,
-  });
-
-  useEffect(() => {
-    if (googleResponse?.type !== "success") return;
-    const { id_token } = googleResponse.params;
+  async function signInWithGoogle() {
     setGoogleLoading(true);
-    (async () => {
-      try {
-        const credential = GoogleAuthProvider.credential(id_token);
-        const userCredential = await signInWithCredential(auth, credential);
-        const idToken = await userCredential.user.getIdToken();
-        await loginWithFirebaseToken(idToken, userCredential.user.displayName || undefined);
-      } catch (err: any) {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const result = await GoogleSignin.signIn();
+      const googleIdToken = result.data?.idToken;
+      if (!googleIdToken) throw new Error("Google se idToken nahi mila");
+
+      const credential = GoogleAuthProvider.credential(googleIdToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const idToken = await userCredential.user.getIdToken();
+      await loginWithFirebaseToken(idToken, userCredential.user.displayName || undefined);
+    } catch (err: any) {
+      if (err?.code !== "SIGN_IN_CANCELLED" && err?.code !== "12501") {
         Alert.alert("Google login failed", err?.response?.data?.message ?? err.message);
-      } finally {
-        setGoogleLoading(false);
       }
-    })();
-  }, [googleResponse]);
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function sendOtp() {
     if (!phone.trim().startsWith("+")) {
@@ -186,7 +189,7 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={styles.googleButton}
-          onPress={() => promptGoogleSignIn()}
+          onPress={signInWithGoogle}
           disabled={googleLoading}
         >
           {googleLoading ? (

@@ -11,31 +11,27 @@ import {
 } from "react-native";
 import { api } from "../api/client";
 import { CalendarIcon, PinIcon, SearchIcon } from "../components/icons";
+import LocationAutocomplete, { Place } from "../components/LocationAutocomplete";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Search">;
 
-// NOTE: for the MVP, from/to are plain lat/lng entered manually. Swap this
-// for a places-autocomplete input (Google Places API) once an API key is
-// available — that's the "Level 3 — Smart" step from the roadmap.
 export default function SearchScreen({ navigation }: Props) {
-  const [fromLat, setFromLat] = useState("");
-  const [fromLng, setFromLng] = useState("");
-  const [toLat, setToLat] = useState("");
-  const [toLng, setToLng] = useState("");
+  const [from, setFrom] = useState<Place | null>(null);
+  const [to, setTo] = useState<Place | null>(null);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
 
   async function search() {
-    if (!fromLat || !fromLng || !toLat || !toLng) {
-      Alert.alert("From/To coordinates bharna zaroori hai");
+    if (!from || !to) {
+      Alert.alert("From/To address chunna zaroori hai");
       return;
     }
     setLoading(true);
     try {
       const { data } = await api.get("/rides/search", {
-        params: { fromLat, fromLng, toLat, toLng, date },
+        params: { fromLat: from.lat, fromLng: from.lng, toLat: to.lat, toLng: to.lng, date },
       });
       navigation.navigate("RideResults", { rides: data });
     } catch (err: any) {
@@ -55,25 +51,8 @@ export default function SearchScreen({ navigation }: Props) {
             <PinIcon size={15} color={colors.accentDark} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.fieldLabel}>From — lat, lng</Text>
-            <View style={styles.coordRow}>
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lat"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={fromLat}
-                onChangeText={setFromLat}
-              />
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lng"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={fromLng}
-                onChangeText={setFromLng}
-              />
-            </View>
+            <Text style={styles.fieldLabel}>From</Text>
+            <LocationAutocomplete placeholder="Address search karo" onSelect={setFrom} />
           </View>
         </View>
 
@@ -84,25 +63,8 @@ export default function SearchScreen({ navigation }: Props) {
             <PinIcon size={15} color={colors.ink700} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.fieldLabel}>To — lat, lng</Text>
-            <View style={styles.coordRow}>
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lat"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={toLat}
-                onChangeText={setToLat}
-              />
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lng"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={toLng}
-                onChangeText={setToLng}
-              />
-            </View>
+            <Text style={styles.fieldLabel}>To</Text>
+            <LocationAutocomplete placeholder="Address search karo" onSelect={setTo} />
           </View>
         </View>
       </View>
@@ -165,18 +127,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.4,
     marginBottom: 4,
-  },
-  coordRow: { flexDirection: "row", gap: spacing.sm },
-  coordInput: {
-    flex: 1,
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.ink900,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 42 },
   dateCard: {

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api/client";
 import { BikeIcon, CalendarIcon, CarIcon, MegaphoneIcon, PinIcon } from "../components/icons";
+import LocationAutocomplete, { Place } from "../components/LocationAutocomplete";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 import { Vehicle } from "../types";
@@ -23,12 +24,8 @@ export default function PublishRideScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleId, setVehicleId] = useState<string | undefined>();
-  const [fromLabel, setFromLabel] = useState("");
-  const [fromLat, setFromLat] = useState("");
-  const [fromLng, setFromLng] = useState("");
-  const [toLabel, setToLabel] = useState("");
-  const [toLat, setToLat] = useState("");
-  const [toLng, setToLng] = useState("");
+  const [from, setFrom] = useState<Place | null>(null);
+  const [to, setTo] = useState<Place | null>(null);
   const [departureAt, setDepartureAt] = useState("");
   const [seatsTotal, setSeatsTotal] = useState(2);
   const [pricePerSeat, setPricePerSeat] = useState("");
@@ -47,12 +44,16 @@ export default function PublishRideScreen({ navigation }: Props) {
       Alert.alert("Pehle ek vehicle add karo (Profile screen se)");
       return;
     }
+    if (!from || !to) {
+      Alert.alert("From/To address chunna zaroori hai");
+      return;
+    }
     setSubmitting(true);
     try {
       await api.post("/rides", {
         vehicleId,
-        from: { name: fromLabel, lat: Number(fromLat), lng: Number(fromLng) },
-        to: { name: toLabel, lat: Number(toLat), lng: Number(toLng) },
+        from,
+        to,
         departureAt: new Date(departureAt).toISOString(),
         seatsTotal,
         pricePerSeat: Number(pricePerSeat),
@@ -106,31 +107,7 @@ export default function PublishRideScreen({ navigation }: Props) {
             <PinIcon size={15} color={colors.accentDark} />
           </View>
           <View style={{ flex: 1 }}>
-            <TextInput
-              style={styles.plainInput}
-              placeholder="From (jagah ka naam)"
-              placeholderTextColor={colors.ink300}
-              value={fromLabel}
-              onChangeText={setFromLabel}
-            />
-            <View style={styles.coordRow}>
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lat"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={fromLat}
-                onChangeText={setFromLat}
-              />
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lng"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={fromLng}
-                onChangeText={setFromLng}
-              />
-            </View>
+            <LocationAutocomplete placeholder="From (jagah ka naam)" onSelect={setFrom} />
           </View>
         </View>
 
@@ -141,31 +118,7 @@ export default function PublishRideScreen({ navigation }: Props) {
             <PinIcon size={15} color={colors.ink700} />
           </View>
           <View style={{ flex: 1 }}>
-            <TextInput
-              style={styles.plainInput}
-              placeholder="To (jagah ka naam)"
-              placeholderTextColor={colors.ink300}
-              value={toLabel}
-              onChangeText={setToLabel}
-            />
-            <View style={styles.coordRow}>
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lat"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={toLat}
-                onChangeText={setToLat}
-              />
-              <TextInput
-                style={styles.coordInput}
-                placeholder="Lng"
-                placeholderTextColor={colors.ink300}
-                keyboardType="numeric"
-                value={toLng}
-                onChangeText={setToLng}
-              />
-            </View>
+            <LocationAutocomplete placeholder="To (jagah ka naam)" onSelect={setTo} />
           </View>
         </View>
       </View>
@@ -290,19 +243,6 @@ const styles = StyleSheet.create({
   },
   routeRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, paddingVertical: spacing.md },
   pinBadge: { width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  plainInput: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink900, paddingVertical: 4 },
-  coordRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
-  coordInput: {
-    flex: 1,
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.ink900,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 44 },
   fieldRow: {
     flexDirection: "row",

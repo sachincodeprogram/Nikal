@@ -1,11 +1,14 @@
+import * as Google from "expo-auth-session/providers/google";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
+import * as WebBrowser from "expo-web-browser";
 import {
   getAuth,
+  GoogleAuthProvider,
   PhoneAuthProvider,
   signInWithCredential,
   signInWithPhoneNumber,
 } from "firebase/auth";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,12 +18,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ArrowRightIcon, BikeIcon, CarIcon, PhoneIcon, RouteMarkIcon, ShieldCheckIcon } from "../components/icons";
-import { firebaseApp, firebaseConfig } from "../config/firebase";
+import { ArrowRightIcon, BikeIcon, CarIcon, GoogleIcon, PhoneIcon, RouteMarkIcon, ShieldCheckIcon } from "../components/icons";
+import { firebaseApp, firebaseConfig, googleWebClientId } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 
 const auth = getAuth(firebaseApp);
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { loginWithFirebaseToken } = useAuth();
@@ -32,6 +36,29 @@ export default function LoginScreen() {
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const [, googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
+    webClientId: googleWebClientId,
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type !== "success") return;
+    const { id_token } = googleResponse.params;
+    setGoogleLoading(true);
+    (async () => {
+      try {
+        const credential = GoogleAuthProvider.credential(id_token);
+        const userCredential = await signInWithCredential(auth, credential);
+        const idToken = await userCredential.user.getIdToken();
+        await loginWithFirebaseToken(idToken, userCredential.user.displayName || undefined);
+      } catch (err: any) {
+        Alert.alert("Google login failed", err?.response?.data?.message ?? err.message);
+      } finally {
+        setGoogleLoading(false);
+      }
+    })();
+  }, [googleResponse]);
 
   async function sendOtp() {
     if (!phone.trim().startsWith("+")) {
@@ -150,6 +177,27 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <Text style={styles.helper}>We'll text a 6-digit code to verify it's you</Text>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={() => promptGoogleSignIn()}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color={colors.ink700} />
+          ) : (
+            <>
+              <GoogleIcon size={18} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.trustRow}>
@@ -258,6 +306,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.ink500,
   },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontFamily: fonts.bold, fontSize: 11, color: colors.ink400, letterSpacing: 0.5 },
+  googleButton: {
+    flexDirection: "row",
+    marginTop: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+  },
+  googleButtonText: { color: colors.ink700, fontFamily: fonts.bold, fontSize: 15 },
   trustRow: {
     marginTop: spacing.xxl,
     flexDirection: "row",

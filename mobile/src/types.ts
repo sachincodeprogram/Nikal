@@ -2,7 +2,8 @@ export type VehicleType = "CAR" | "BIKE";
 
 export interface User {
   _id: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   name: string;
   photo?: string | null;
   bio?: string | null;

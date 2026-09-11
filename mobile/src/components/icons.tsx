@@ -360,6 +360,26 @@ export function DashboardIcon({ size = 19, color = "#3E4C49" }: IconProps) {
   );
 }
 
+export function GoogleIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.6a4.8 4.8 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.6z"
+        fill="#4285F4"
+      />
+      <Path
+        d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.7-4.2H2.8v2.6A10 10 0 0 0 12 22z"
+        fill="#34A853"
+      />
+      <Path d="M6.3 13.7a6 6 0 0 1 0-3.8v-2.6H2.8a10 10 0 0 0 0 9z" fill="#FBBC05" />
+      <Path
+        d="M12 6.4c1.5 0 2.9.5 4 1.5l3-3A10 10 0 0 0 2.8 7.3l3.5 2.6A6 6 0 0 1 12 6.4z"
+        fill="#EA4335"
+      />
+    </Svg>
+  );
+}
+
 export function DotsIcon({ size = 18, color = "#6C7A78" }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">

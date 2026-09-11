@@ -24,5 +24,6 @@ export async function fetchRoute(origin, destination) {
   }
 
   const polyline = data.routes[0].overview_polyline.points;
-  return { polyline, points: decodePolyline(polyline) };
+  const distanceMeters = data.routes[0].legs.reduce((sum, leg) => sum + leg.distance.value, 0);
+  return { polyline, points: decodePolyline(polyline), distanceMeters };
 }

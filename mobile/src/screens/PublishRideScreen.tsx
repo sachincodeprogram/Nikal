@@ -6,13 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api/client";
-import { BikeIcon, CalendarIcon, CarIcon, MegaphoneIcon, PinIcon } from "../components/icons";
+import { BikeIcon, CalendarIcon, CarIcon, ClockIcon, MegaphoneIcon, PinIcon } from "../components/icons";
 import LocationAutocomplete, { Place } from "../components/LocationAutocomplete";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
@@ -20,15 +19,42 @@ import { Vehicle } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PublishRide">;
 
+type PriceSuggestion = { distanceKm: number; recommended: number; min: number; max: number };
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DATE_CHOICE_COUNT = 21;
+const PRICE_STEP = 10;
+const MIN_PRICE = 20;
+
+function toDateKey(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function dateChoices() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Array.from({ length: DATE_CHOICE_COUNT }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const label = i === 0 ? "Today" : i === 1 ? "Tomorrow" : `${DAY_LABELS[d.getDay()]} ${d.getDate()}`;
+    return { key: toDateKey(d), label };
+  });
+}
+
 export default function PublishRideScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleId, setVehicleId] = useState<string | undefined>();
   const [from, setFrom] = useState<Place | null>(null);
   const [to, setTo] = useState<Place | null>(null);
-  const [departureAt, setDepartureAt] = useState("");
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [hour, setHour] = useState(8);
+  const [minute, setMinute] = useState(0);
   const [seatsTotal, setSeatsTotal] = useState(2);
-  const [pricePerSeat, setPricePerSeat] = useState("");
+  const [pricePerSeat, setPricePerSeat] = useState(0);
+  const [priceSuggestion, setPriceSuggestion] = useState<PriceSuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [priceTouched, setPriceTouched] = useState(false);
   const [autoConfirm, setAutoConfirm] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,6 +65,45 @@ export default function PublishRideScreen({ navigation }: Props) {
     });
   }, []);
 
+  useEffect(() => {
+    if (!from || !to) {
+      setPriceSuggestion(null);
+      return;
+    }
+    let cancelled = false;
+    setSuggestionLoading(true);
+    api
+      .get("/rides/price-suggestion", {
+        params: { fromLat: from.lat, fromLng: from.lng, toLat: to.lat, toLng: to.lng },
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setPriceSuggestion(data);
+        if (!priceTouched) setPricePerSeat(data.recommended);
+      })
+      .catch(() => {
+        if (!cancelled) setPriceSuggestion(null);
+      })
+      .finally(() => {
+        if (!cancelled) setSuggestionLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from?.lat, from?.lng, to?.lat, to?.lng]);
+
+  function toggleDate(key: string) {
+    setSelectedDates((prev) => (prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]));
+  }
+
+  function priceState(): "low" | "good" | "high" | null {
+    if (!priceSuggestion) return null;
+    if (pricePerSeat < priceSuggestion.min) return "low";
+    if (pricePerSeat > priceSuggestion.max) return "high";
+    return "good";
+  }
+
   async function publish() {
     if (!vehicleId) {
       Alert.alert("Pehle ek vehicle add karo (Profile screen se)");
@@ -48,24 +113,67 @@ export default function PublishRideScreen({ navigation }: Props) {
       Alert.alert("From/To address chunna zaroori hai");
       return;
     }
+    if (selectedDates.length === 0) {
+      Alert.alert("Kam se kam ek date chuno");
+      return;
+    }
+    if (!pricePerSeat) {
+      Alert.alert("Price per seat set karo");
+      return;
+    }
+
     setSubmitting(true);
-    try {
-      await api.post("/rides", {
-        vehicleId,
-        from,
-        to,
-        departureAt: new Date(departureAt).toISOString(),
-        seatsTotal,
-        pricePerSeat: Number(pricePerSeat),
-        approval: autoConfirm ? "auto" : "manual",
-      });
-      Alert.alert("Ride published!", "", [{ text: "OK", onPress: () => navigation.navigate("Home") }]);
-    } catch (err: any) {
-      Alert.alert("Publish failed", err?.response?.data?.message ?? err.message);
-    } finally {
-      setSubmitting(false);
+    let successCount = 0;
+    let lastError = "";
+    for (const dateKey of selectedDates) {
+      try {
+        await api.post("/rides", {
+          vehicleId,
+          from,
+          to,
+          departureAt: new Date(`${dateKey}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`).toISOString(),
+          seatsTotal,
+          pricePerSeat,
+          approval: autoConfirm ? "auto" : "manual",
+        });
+        successCount += 1;
+      } catch (err: any) {
+        lastError = err?.response?.data?.message ?? err.message;
+      }
+    }
+    setSubmitting(false);
+
+    if (successCount === selectedDates.length) {
+      const msg = successCount > 1 ? `${successCount} rides published!` : "Ride published!";
+      Alert.alert(msg, "", [{ text: "OK", onPress: () => navigation.navigate("Home") }]);
+    } else if (successCount > 0) {
+      Alert.alert(
+        "Kuch rides publish nahi ho payi",
+        `${successCount}/${selectedDates.length} publish hui. ${lastError}`,
+        [{ text: "OK", onPress: () => navigation.navigate("Home") }]
+      );
+    } else {
+      Alert.alert("Publish failed", lastError);
     }
   }
+
+  const state = priceState();
+  const badgeStyle =
+    state === "good"
+      ? styles.badgeGood
+      : state === "low"
+      ? styles.badgeLow
+      : state === "high"
+      ? styles.badgeHigh
+      : styles.badgeNeutral;
+  const badgeTextStyle =
+    state === "good"
+      ? styles.badgeTextGood
+      : state === "low"
+      ? styles.badgeTextLow
+      : state === "high"
+      ? styles.badgeTextHigh
+      : styles.badgeTextNeutral;
 
   return (
     <ScrollView
@@ -123,51 +231,109 @@ export default function PublishRideScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <Text style={[styles.label, { marginTop: spacing.xxl }]}>Departure</Text>
-      <View style={styles.fieldRow}>
-        <CalendarIcon size={17} color={colors.amberDark} />
-        <TextInput
-          style={styles.fieldInput}
-          placeholder="YYYY-MM-DDTHH:mm"
-          placeholderTextColor={colors.ink300}
-          value={departureAt}
-          onChangeText={setDepartureAt}
-        />
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>Date(s)</Text>
+        {selectedDates.length > 0 && (
+          <Text style={styles.labelHint}>{selectedDates.length} din select kiye</Text>
+        )}
+      </View>
+      <Text style={styles.helperText}>Ek se zyada date chuno agar roz yehi ride chalate ho</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
+        {dateChoices().map(({ key, label }) => {
+          const active = selectedDates.includes(key);
+          return (
+            <TouchableOpacity
+              key={key}
+              style={[styles.dateChip, active && styles.dateChipActive]}
+              onPress={() => toggleDate(key)}
+            >
+              <CalendarIcon size={13} color={active ? colors.white : colors.amberDark} />
+              <Text style={[styles.dateChipText, active && styles.dateChipTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      <Text style={[styles.label, { marginTop: spacing.xxl }]}>Pickup time</Text>
+      <View style={styles.timeRow}>
+        <ClockIcon size={16} color={colors.ink500} />
+        <View style={styles.timeStepper}>
+          <TouchableOpacity style={styles.stepperBtn} onPress={() => setHour((h) => (h + 23) % 24)}>
+            <Text style={styles.stepperBtnText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.timeValue}>{String(hour).padStart(2, "0")}</Text>
+          <TouchableOpacity style={[styles.stepperBtn, styles.stepperBtnAccent]} onPress={() => setHour((h) => (h + 1) % 24)}>
+            <Text style={[styles.stepperBtnText, { color: colors.accentDark }]}>+</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.timeColon}>:</Text>
+        <View style={styles.timeStepper}>
+          <TouchableOpacity style={styles.stepperBtn} onPress={() => setMinute((m) => (m + 45) % 60)}>
+            <Text style={styles.stepperBtnText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.timeValue}>{String(minute).padStart(2, "0")}</Text>
+          <TouchableOpacity style={[styles.stepperBtn, styles.stepperBtnAccent]} onPress={() => setMinute((m) => (m + 15) % 60)}>
+            <Text style={[styles.stepperBtnText, { color: colors.accentDark }]}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.twoCol}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Seats</Text>
-          <View style={styles.stepperRow}>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => setSeatsTotal((n) => Math.max(1, n - 1))}
-            >
-              <Text style={styles.stepperBtnText}>−</Text>
-            </TouchableOpacity>
-            <Text style={styles.stepperValue}>{seatsTotal}</Text>
-            <TouchableOpacity
-              style={[styles.stepperBtn, styles.stepperBtnAccent]}
-              onPress={() => setSeatsTotal((n) => Math.min(8, n + 1))}
-            >
-              <Text style={[styles.stepperBtnText, { color: colors.accentDark }]}>+</Text>
-            </TouchableOpacity>
-          </View>
+      <Text style={[styles.label, { marginTop: spacing.xxl }]}>Seats</Text>
+      <View style={styles.stepperRow}>
+        <TouchableOpacity style={styles.stepperBtn} onPress={() => setSeatsTotal((n) => Math.max(1, n - 1))}>
+          <Text style={styles.stepperBtnText}>−</Text>
+        </TouchableOpacity>
+        <Text style={styles.stepperValue}>{seatsTotal}</Text>
+        <TouchableOpacity style={[styles.stepperBtn, styles.stepperBtnAccent]} onPress={() => setSeatsTotal((n) => Math.min(8, n + 1))}>
+          <Text style={[styles.stepperBtnText, { color: colors.accentDark }]}>+</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.label, { marginTop: spacing.xxl }]}>Price / seat</Text>
+      <View style={styles.priceCard}>
+        <View style={styles.priceRow}>
+          <TouchableOpacity
+            style={styles.priceStepperBtn}
+            onPress={() => {
+              setPriceTouched(true);
+              setPricePerSeat((p) => Math.max(MIN_PRICE, p - PRICE_STEP));
+            }}
+          >
+            <Text style={styles.priceStepperBtnText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.priceValue}>₹{pricePerSeat || 0}</Text>
+          <TouchableOpacity
+            style={[styles.priceStepperBtn, styles.priceStepperBtnAccent]}
+            onPress={() => {
+              setPriceTouched(true);
+              setPricePerSeat((p) => p + PRICE_STEP);
+            }}
+          >
+            <Text style={[styles.priceStepperBtnText, { color: colors.accentDark }]}>+</Text>
+          </TouchableOpacity>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Price / seat</Text>
-          <View style={styles.fieldRowFlat}>
-            <Text style={styles.rupee}>₹</Text>
-            <TextInput
-              style={styles.fieldInput}
-              placeholder="250"
-              placeholderTextColor={colors.ink300}
-              keyboardType="numeric"
-              value={pricePerSeat}
-              onChangeText={setPricePerSeat}
-            />
-          </View>
-        </View>
+
+        {suggestionLoading && <ActivityIndicator style={{ marginTop: spacing.md }} color={colors.accent} />}
+
+        {priceSuggestion && !suggestionLoading && (
+          <>
+            <View style={[styles.badge, badgeStyle]}>
+              <Text style={[styles.badgeText, badgeTextStyle]}>
+                Recommended price: ₹{priceSuggestion.min} - ₹{priceSuggestion.max}
+              </Text>
+            </View>
+            <Text style={styles.priceHint}>
+              {state === "good" && "Ye price theek hai — passengers jaldi milenge."}
+              {state === "low" && "Ye price kaafi kam hai — chaho to badha sakte ho."}
+              {state === "high" && "Ye price zyada hai — passengers doosri ride se compare kar sakte hain."}
+            </Text>
+            <Text style={styles.priceDistance}>Route distance: ~{priceSuggestion.distanceKm} km</Text>
+          </>
+        )}
+
+        {!priceSuggestion && !suggestionLoading && (
+          <Text style={styles.priceHint}>From aur To chuno taake price suggestion mil sake.</Text>
+        )}
       </View>
 
       <TouchableOpacity style={styles.toggleRow} onPress={() => setAutoConfirm((v) => !v)} activeOpacity={0.8}>
@@ -188,7 +354,9 @@ export default function PublishRideScreen({ navigation }: Props) {
         ) : (
           <>
             <MegaphoneIcon size={18} color={colors.white} />
-            <Text style={styles.buttonText}>Publish Ride</Text>
+            <Text style={styles.buttonText}>
+              {selectedDates.length > 1 ? `Publish ${selectedDates.length} Rides` : "Publish Ride"}
+            </Text>
           </>
         )}
       </TouchableOpacity>
@@ -207,6 +375,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginBottom: spacing.sm,
   },
+  labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.xxl },
+  labelHint: { fontFamily: fonts.semibold, fontSize: 11.5, color: colors.accentDark, marginBottom: spacing.sm },
+  helperText: { fontFamily: fonts.semibold, fontSize: 11.5, color: colors.ink500, marginTop: -4, marginBottom: spacing.sm },
   warn: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.danger, marginBottom: spacing.sm },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
@@ -244,7 +415,22 @@ const styles = StyleSheet.create({
   routeRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, paddingVertical: spacing.md },
   pinBadge: { width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 44 },
-  fieldRow: {
+  dateRow: { gap: spacing.sm, paddingVertical: 2 },
+  dateChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  dateChipActive: { backgroundColor: colors.amber, borderColor: colors.amber },
+  dateChipText: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.ink700 },
+  dateChipTextActive: { color: colors.white },
+  timeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
@@ -253,22 +439,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radii.md,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 4,
+    paddingVertical: spacing.md,
   },
-  fieldRowFlat: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 4,
-  },
-  rupee: { fontFamily: fonts.extrabold, color: colors.ink500, fontSize: 15 },
-  fieldInput: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.ink900, paddingVertical: 12 },
-  twoCol: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xxl },
+  timeStepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  timeValue: { fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink900, minWidth: 28, textAlign: "center" },
+  timeColon: { fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink500 },
   stepperRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -284,6 +459,39 @@ const styles = StyleSheet.create({
   stepperBtnAccent: { backgroundColor: colors.accentTint },
   stepperBtnText: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.ink700 },
   stepperValue: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.ink900 },
+  priceCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  priceRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xxl },
+  priceStepperBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  priceStepperBtnAccent: {},
+  priceStepperBtnText: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.accent },
+  priceValue: { fontFamily: fonts.extrabold, fontSize: 32, color: colors.accentDark, minWidth: 100, textAlign: "center" },
+  badge: { alignSelf: "center", marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: 8, borderRadius: radii.pill },
+  badgeNeutral: { backgroundColor: colors.ink100 },
+  badgeGood: { backgroundColor: colors.accentTint },
+  badgeLow: { backgroundColor: colors.amberTint },
+  badgeHigh: { backgroundColor: colors.dangerTint },
+  badgeText: { fontFamily: fonts.bold, fontSize: 12.5 },
+  badgeTextNeutral: { color: colors.ink700 },
+  badgeTextGood: { color: colors.accentDark },
+  badgeTextLow: { color: colors.amberDark },
+  badgeTextHigh: { color: colors.dangerDark },
+  priceHint: { fontFamily: fonts.semibold, fontSize: 12, color: colors.ink500, textAlign: "center", marginTop: spacing.sm },
+  priceDistance: { fontFamily: fonts.semibold, fontSize: 11, color: colors.ink400, textAlign: "center", marginTop: 4 },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",

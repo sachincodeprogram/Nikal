@@ -4,7 +4,11 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
   {
-    phone: { type: String, required: true, unique: true, trim: true },
+    // A user has a phone (Phone-OTP login), an email (Google login), or both —
+    // sparse indexes so two Google-only users (no phone) or two phone-only
+    // users (no email) don't collide on the missing field.
+    phone: { type: String, unique: true, sparse: true, trim: true },
+    email: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
     name: { type: String, required: true, trim: true },
     photo: { type: String },
     bio: { type: String },

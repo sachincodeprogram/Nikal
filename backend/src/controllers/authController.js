@@ -9,13 +9,21 @@ export const firebaseLogin = asyncHandler(async (req, res) => {
 
   const decoded = await getFirebaseAdmin().auth().verifyIdToken(idToken);
   const phone = decoded.phone_number;
-  if (!phone) return res.status(400).json({ message: "Token has no phone number" });
+  const email = decoded.email;
+  if (!phone && !email) {
+    return res.status(400).json({ message: "Token has no phone number or email" });
+  }
 
-  let user = await User.findOne({ phone });
+  // Phone-OTP and Google logins both land here — look up by whichever
+  // identifier this token carries so a Google user isn't forced to have a
+  // phone number (and vice versa).
+  let user = phone ? await User.findOne({ phone }) : await User.findOne({ email });
   if (!user) {
     user = await User.create({
-      phone,
+      phone: phone || undefined,
+      email: email || undefined,
       name: decoded.name || "New User",
+      photo: decoded.picture,
       isVerified: true,
     });
   } else if (!user.isVerified) {

@@ -2,9 +2,11 @@ import Booking from "../models/Booking.js";
 import Ride from "../models/Ride.js";
 import Vehicle from "../models/Vehicle.js";
 import { fetchRoute } from "../services/directions.js";
+import { suggestPricePerSeat } from "../services/pricing.js";
 import { refundPayment } from "../services/payments.js";
 import { matchRide, sampleWaypoints } from "../services/rideMatching.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { haversineMeters } from "../utils/geo.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUS_TRANSITIONS = ["started", "completed", "cancelled"];
@@ -22,11 +24,31 @@ async function resolveRoute(from, to) {
   } catch (err) {
     if (!process.env.GOOGLE_MAPS_API_KEY) {
       console.warn("GOOGLE_MAPS_API_KEY not set — using a straight-line route fallback");
-      return { polyline: null, points: [[from.lat, from.lng], [to.lat, to.lng]] };
+      return {
+        polyline: null,
+        points: [[from.lat, from.lng], [to.lat, to.lng]],
+        distanceMeters: haversineMeters(from, to),
+      };
     }
     throw err;
   }
 }
+
+export const getPriceSuggestion = asyncHandler(async (req, res) => {
+  const { fromLat, fromLng, toLat, toLng } = req.query;
+  if (!fromLat || !fromLng || !toLat || !toLng) {
+    return res.status(400).json({ message: "fromLat, fromLng, toLat and toLng are required" });
+  }
+
+  const from = { lat: Number(fromLat), lng: Number(fromLng) };
+  const to = { lat: Number(toLat), lng: Number(toLng) };
+  if ([from.lat, from.lng, to.lat, to.lng].some(Number.isNaN)) {
+    return res.status(400).json({ message: "fromLat/fromLng/toLat/toLng must be numbers" });
+  }
+
+  const route = await resolveRoute(from, to);
+  res.json(suggestPricePerSeat(route.distanceMeters / 1000));
+});
 
 export const createRide = asyncHandler(async (req, res) => {
   const { from, to, departureAt, seatsTotal, pricePerSeat, approval, prefs, vehicleId } = req.body;

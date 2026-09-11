@@ -14,3 +14,9 @@ export const firebaseConfig = {
 };
 
 export const firebaseApp = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+
+// From Google Cloud Console → APIs & Services → Credentials → "Web client
+// (auto created by Google Service)" for this same Firebase project. Not
+// secret — OAuth client IDs are meant to ship inside the client app.
+export const googleWebClientId =
+  "725219085138-gi4q2oe67oigde639v24f09fomhkc43b.apps.googleusercontent.com";

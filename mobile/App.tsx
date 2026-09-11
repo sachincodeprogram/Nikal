@@ -7,9 +7,10 @@ import {
   useFonts,
 } from "@expo-google-fonts/manrope";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import SplashOverlay from "./src/components/SplashOverlay";
 import { AuthProvider } from "./src/context/AuthContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { colors } from "./src/theme";
@@ -21,6 +22,7 @@ export default function App() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
   });
+  const [showSplash, setShowSplash] = useState(true);
 
   if (!fontsLoaded) {
     return (
@@ -38,6 +40,7 @@ export default function App() {
           <StatusBar style="dark" />
         </NavigationContainer>
       </AuthProvider>
+      {showSplash && <SplashOverlay onFinish={() => setShowSplash(false)} />}
     </SafeAreaProvider>
   );
 }

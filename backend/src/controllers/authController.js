@@ -19,16 +19,14 @@ export const firebaseLogin = asyncHandler(async (req, res) => {
   // phone number (and vice versa).
   let user = phone ? await User.findOne({ phone }) : await User.findOne({ email });
   if (!user) {
+    // isVerified starts false — that badge means "KYC approved by an admin",
+    // not just "signed in", so it's earned via POST /users/me/kyc below.
     user = await User.create({
       phone: phone || undefined,
       email: email || undefined,
       name: decoded.name || "New User",
       photo: decoded.picture,
-      isVerified: true,
     });
-  } else if (!user.isVerified) {
-    user.isVerified = true;
-    await user.save();
   }
 
   const token = signToken(user);

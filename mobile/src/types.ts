@@ -1,5 +1,17 @@
 export type VehicleType = "CAR" | "BIKE";
 
+export type KycDocType = "aadhaar" | "driving_license" | "passport" | "voter_id";
+export type KycStatus = "unsubmitted" | "pending" | "verified" | "rejected";
+
+export interface Kyc {
+  docType?: KycDocType;
+  docNumber?: string;
+  docPhoto?: string;
+  status: KycStatus;
+  rejectionReason?: string;
+  submittedAt?: string;
+}
+
 export interface User {
   _id: string;
   phone?: string;
@@ -9,6 +21,7 @@ export interface User {
   bio?: string | null;
   gender?: "male" | "female" | "other";
   isVerified: boolean;
+  kyc?: Kyc;
   banned?: boolean;
   isAdmin?: boolean;
   avgRating: number;

@@ -1,7 +1,6 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import {
-  getAuth,
   GoogleAuthProvider,
   PhoneAuthProvider,
   signInWithCredential,
@@ -18,11 +17,9 @@ import {
   View,
 } from "react-native";
 import { ArrowRightIcon, BikeIcon, CarIcon, GoogleIcon, PhoneIcon, RouteMarkIcon, ShieldCheckIcon } from "../components/icons";
-import { firebaseApp, firebaseConfig, googleWebClientId } from "../config/firebase";
+import { auth, firebaseConfig, googleWebClientId } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
-
-const auth = getAuth(firebaseApp);
 
 // webClientId here (not the Android client) is required by the native SDK
 // too — it's what identifies this app to Firebase so the resulting idToken

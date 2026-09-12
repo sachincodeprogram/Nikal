@@ -12,6 +12,7 @@
     "expo": "~57.0.21",
     "expo-firebase-recaptcha": "^2.3.1",
     "expo-font": "~57.0.3",
+    "expo-image-picker": "~57.0.17",
     "expo-linear-gradient": "~57.0.1",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",

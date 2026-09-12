@@ -21,6 +21,24 @@ const userSchema = new Schema(
     role: { type: String, enum: ["passenger", "driver"], default: "passenger" },
     isAdmin: { type: Boolean, default: false },
     blocked: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    // KYC identity check — `isVerified` above now only flips to true once
+    // either DigiLocker confirms the user's identity automatically, or an
+    // admin approves a manually-submitted document.
+    kyc: {
+      docType: { type: String, enum: ["aadhaar", "driving_license", "passport", "voter_id"] },
+      docNumber: { type: String, trim: true },
+      docPhoto: { type: String },
+      status: {
+        type: String,
+        enum: ["unsubmitted", "pending", "verified", "rejected"],
+        default: "unsubmitted",
+      },
+      rejectionReason: { type: String },
+      submittedAt: { type: Date },
+      // Set while a DigiLocker consent flow is in progress, so the
+      // server-side confirmation step knows which Setu request to check.
+      digilockerRequestId: { type: String },
+    },
   },
   { timestamps: true }
 );

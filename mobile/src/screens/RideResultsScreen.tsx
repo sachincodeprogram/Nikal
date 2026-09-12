@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BikeIcon, CarIcon, ChevronRightIcon, ClockIcon, StarIcon } from "../components/icons";
+import { BikeIcon, CarIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, StarIcon } from "../components/icons";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, fonts, radii, shadow, spacing } from "../theme";
 import { User, Vehicle } from "../types";
@@ -75,6 +75,7 @@ export default function RideResultsScreen({ route, navigation }: Props) {
                   <Text style={styles.avatarText}>{initialsOf(driver?.name)}</Text>
                 </View>
                 <Text style={styles.driverName}>{driver?.name ?? "Driver"}</Text>
+                {driver?.isVerified && <ShieldCheckIcon size={13} color={colors.accent} />}
                 <View style={styles.ratingRow}>
                   <StarIcon size={12} />
                   <Text style={styles.ratingText}>{driver?.avgRating?.toFixed(1) ?? "—"}</Text>

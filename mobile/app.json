@@ -27,6 +27,13 @@
       "expo-font",
       "@react-native-google-signin/google-signin",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nikal needs access to your photos to set a profile picture, vehicle photo, or KYC document.",
+          "cameraPermission": "Nikal needs access to your camera to take a profile picture, vehicle photo, or KYC document."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#00655C",

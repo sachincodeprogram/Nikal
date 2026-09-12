@@ -389,3 +389,32 @@ export function DotsIcon({ size = 18, color = "#6C7A78" }: IconProps) {
     </Svg>
   );
 }
+
+export function CameraIcon({ size = 16, color = "#FFFFFF" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"
+        fill={color}
+        fillOpacity={0.16}
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle cx={12} cy={12.5} r={3.3} fill="none" stroke={color} strokeWidth={1.8} />
+    </Svg>
+  );
+}
+
+export function IdCardIcon({ size = 18, color = "#3856C9" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Rect x={3} y={5.5} width={18} height={13} rx={2.2} fill={color} fillOpacity={0.14} stroke={color} strokeWidth={1.7} />
+      <Circle cx={8.2} cy={11.2} r={2} fill="none" stroke={color} strokeWidth={1.6} />
+      <Path d="M5.4 15.6c.5-1.4 1.6-2.1 2.8-2.1s2.3.7 2.8 2.1" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={14.3} y1={10} x2={18.6} y2={10} stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={14.3} y1={13.2} x2={18.6} y2={13.2} stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}

@@ -7,8 +7,10 @@ import {
   listRides,
   listUsers,
   markPayoutPaid,
+  rejectUserKyc,
   resolveReport,
   verifyUser,
+  verifyVehicle,
 } from "../controllers/adminController.js";
 import { adminOnly, auth } from "../middleware/auth.js";
 
@@ -18,7 +20,9 @@ router.use(auth, adminOnly);
 
 router.get("/users", listUsers);
 router.patch("/users/:id/verify", verifyUser);
+router.patch("/users/:id/reject-kyc", rejectUserKyc);
 router.patch("/users/:id/ban", banUser);
+router.patch("/vehicles/:id/verify", verifyVehicle);
 
 router.get("/rides", listRides);
 router.get("/bookings", listBookings);

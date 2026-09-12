@@ -110,7 +110,7 @@ export default function RideDetailScreen({ route }: Props) {
             <View style={{ flex: 1 }}>
               <View style={styles.driverNameRow}>
                 <Text style={styles.driverName}>{driver?.name}</Text>
-                <ShieldCheckIcon size={14} color={colors.accent} />
+                {driver?.isVerified && <ShieldCheckIcon size={14} color={colors.accent} />}
               </View>
               <View style={styles.ratingRow}>
                 <StarIcon size={13} />

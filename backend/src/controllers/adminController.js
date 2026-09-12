@@ -3,22 +3,45 @@ import Payout from "../models/Payout.js";
 import Report from "../models/Report.js";
 import Ride from "../models/Ride.js";
 import User from "../models/User.js";
+import Vehicle from "../models/Vehicle.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { paginate, paginationParams } from "../utils/pagination.js";
 
 export const listUsers = asyncHandler(async (req, res) => {
-  const { q } = req.query;
-  const filter = q
-    ? { $or: [{ name: new RegExp(q, "i") }, { phone: new RegExp(q, "i") }] }
-    : {};
+  const { q, kycStatus } = req.query;
+  const filter = {
+    ...(q ? { $or: [{ name: new RegExp(q, "i") }, { phone: new RegExp(q, "i") }] } : {}),
+    ...(kycStatus ? { "kyc.status": kycStatus } : {}),
+  };
   const result = await paginate(User, filter, paginationParams(req));
   res.json(result);
 });
 
 export const verifyUser = asyncHandler(async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, { isVerified: true }, { new: true });
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { isVerified: true, "kyc.status": "verified" },
+    { new: true }
+  );
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
+});
+
+export const rejectUserKyc = asyncHandler(async (req, res) => {
+  const { reason } = req.body;
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { isVerified: false, "kyc.status": "rejected", "kyc.rejectionReason": reason || "Documents unclear" },
+    { new: true }
+  );
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
+});
+
+export const verifyVehicle = asyncHandler(async (req, res) => {
+  const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, { verified: true }, { new: true });
+  if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+  res.json(vehicle);
 });
 
 export const banUser = asyncHandler(async (req, res) => {

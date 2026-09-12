@@ -16,10 +16,17 @@ function headers() {
 
 async function setuFetch(path, options) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers: headers() });
-  const data = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let data = {};
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    // non-JSON body (e.g. an HTML error page from a proxy/WAF) — fall
+    // through and surface the raw text below instead.
+  }
   if (!res.ok) {
-    const message = data?.message || data?.errorMessage || `Setu DigiLocker request failed (${res.status})`;
-    throw new Error(message);
+    const detail = data?.message || data?.errorMessage || raw.slice(0, 300) || "no response body";
+    throw new Error(`Setu DigiLocker request failed (${res.status}): ${detail}`);
   }
   return data;
 }

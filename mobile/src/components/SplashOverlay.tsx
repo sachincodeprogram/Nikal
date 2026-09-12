@@ -26,11 +26,11 @@ function IndiaFlagBadge() {
 }
 
 export default function SplashOverlay({ onFinish }: { onFinish: () => void }) {
-  const fade = useRef(new Animated.Value(0)).current;
+  // starts fully opaque — this replaces the native boot splash, so it must be
+  // visible from the very first frame with no fade-in gap
+  const fade = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.timing(fade, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-
     const timer = setTimeout(() => {
       Animated.timing(fade, { toValue: 0, duration: 400, useNativeDriver: true }).start(onFinish);
     }, DURATION_MS);

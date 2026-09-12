@@ -301,7 +301,9 @@ export default function PublishRideScreen({ navigation }: Props) {
           >
             <Text style={styles.priceStepperBtnText}>−</Text>
           </TouchableOpacity>
-          <Text style={styles.priceValue}>₹{pricePerSeat || 0}</Text>
+          <Text style={[styles.priceValue, state === "high" && styles.priceValueHigh]}>
+            ₹{pricePerSeat || 0}
+          </Text>
           <TouchableOpacity
             style={[styles.priceStepperBtn, styles.priceStepperBtnAccent]}
             onPress={() => {
@@ -480,6 +482,7 @@ const styles = StyleSheet.create({
   priceStepperBtnAccent: {},
   priceStepperBtnText: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.accent },
   priceValue: { fontFamily: fonts.extrabold, fontSize: 32, color: colors.accentDark, minWidth: 100, textAlign: "center" },
+  priceValueHigh: { color: colors.danger },
   badge: { alignSelf: "center", marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: 8, borderRadius: radii.pill },
   badgeNeutral: { backgroundColor: colors.ink100 },
   badgeGood: { backgroundColor: colors.accentTint },
